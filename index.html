@@ -284,7 +284,7 @@
             };
 
             // Implementation of exponential backoff for API calls
-            const maxRetries = 3;
+            const maxRetries = 5;
             for (let attempt = 0; attempt < maxRetries; attempt++) {
                 let responseText = null;
                 try {
