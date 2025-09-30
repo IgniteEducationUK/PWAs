@@ -115,11 +115,8 @@
     </div>
 
     <script type="module">
-        // Removed the Firebase/Auth setup code as it relies on Canvas environment variables 
-        // that will not exist when hosted externally.
-
-        // API Key placeholder remains empty. External hosting services may provide this
-        // but for this simple static deployment, it relies on the execution environment.
+        
+        // API Key for external deployment: The actual key has been inserted here.
         const apiKey = "AIzaSyC3IdBFCbXjxpF0NEqPW9yOcbYid0z96QE"; 
         
         // --- Core Application Logic ---
@@ -136,6 +133,20 @@
             'instructions': 'Instructions'
         };
 
+        // FALLBACK TEXTS: Used if the API fails after all retry attempts.
+        const fallbackParagraphs = {
+            'adventure': "The rusted iron gate creaked open, revealing a path choked with thick jungle growth. Elias checked his compass, noting that the magnetic field here was completely unstable—a problem they hadn't anticipated. He tightened the straps on his rucksack, the silence broken only by the distant, rhythmic drumming of an unknown tribe. The map promised a hidden city just beyond the ridge, but getting there would require crossing the ravine, and the old rope bridge looked dangerously frayed. He took a deep, steadying breath and began the ascent.",
+            'sci-fi': "Above the neon-slicked megacity of Neo-Kyoto, Sergeant Kaelen watched the cargo bay doors cycle open. Her mission: retrieve the data module from the downed drone before the Syndicate arrived. The airlock hissed, venting thin, recycled oxygen into the vacuum. The gravity boots engaged with a solid *thunk*, and she began her careful walk across the hull, the stars a brutal, unforgiving backdrop. Her comms crackled with static, a warning she couldn't quite decipher, just as the first shadow flitted across the periphery of her reinforced visor.",
+            'horror': "The basement air was thick and cold, smelling perpetually of damp earth and something metallic, like old pennies. Every floorboard above groaned as the house settled, but this sound was different—a wet, dragging noise coming from behind the sealed pantry door. Sarah’s breath hitched in her throat, her torch beam dancing wildly over the grime-caked stone. She told herself it was just the pipes, just the wind, but the scratching intensified, rhythmic and deliberate, like something trying to claw its way out. The rusty latch rattled once more.",
+            'fairy/traditional tale': "In the heart of the Whisperwood stood a tiny cottage roofed with moss, where lived a young girl named Elara who possessed a gift for weaving sunbeams into golden thread. One morning, the ancient, crooked clock struck thirteen, and a small, mischievous gnome appeared upon the windowsill, his beard tangled with dew and clover. He offered Elara three glittering dew-drops in exchange for her silence concerning the location of the Sunstone of the Trolls. Elara knew the price of silence was often too high, yet the dew-drops shimmered with a terrible, sweet temptation.",
+            'comedy': "Professor Plumb was already having a disastrous Tuesday, largely due to accidentally gluing his own hand to his coffee mug, when the automated lecture system decided to introduce a surprise fireworks display. The resulting chaos saw the Head of Department, Dr. Beaker, attempting to extinguish a burning whiteboard using a novelty water pistol filled with lukewarm tea. Plumb sighed, tried to gesture towards the fire alarm with his free, non-mugged hand, and instead accidentally elbowed a delicate anatomical model of a human ear off the desk. He knew he should have stayed in bed.",
+            'tragedy': "When the letter arrived, it was sealed with the familiar crest of the Duke, yet it brought not honour but ashes. Marcus read the short decree twice, his hands trembling as the fragile parchment threatened to crumble. He had sacrificed everything—his family's wealth, his sister's dowry, his own reputation—all for this one, singular venture, and now, it was over. The decree stated simply that the ships, his only hope of recouping the losses, had been lost to a rogue storm off the coast of Volterra. He looked out at the darkening sea, knowing the path to redemption was now closed forever.",
+            'report': "A full analysis of the structural degradation of Test Subject 4-B's polymer shell indicates a catastrophic failure rate commencing at 14:03 GMT on 2025-09-30. The primary cause is attributed to an unexpected thermodynamic shock within the reaction core (see Appendix A for thermal graphs). Specifically, the lack of adequate phase-change coolant resulted in a plasma containment breach, leading to the rapid disintegration of all exterior housing layers. Recommendations include a complete redesign of the coolant loop geometry and recalibration of emergency venting protocols before human testing is initiated.",
+            'diary': "30 September: I can't believe how strange today was. First, Mrs Davies swore the entire class to secrecy about the new drama club uniforms (why do they look like 1980s aerobics gear?) and then Jake actually asked me for help with his History essay. He never asks anyone for help. I probably sounded completely useless. I keep replaying the conversation in my head, wondering if I should have just offered to write it for him. This whole day feels like one giant, awkward social experiment, and I really need to find out what tomorrow's homework is.",
+            'instructions': "Step 4: Secure the main structural column using the provided hex bolts (A-6). Ensure the alignment tab (located at the column base) is firmly seated in the floor channel before tightening. Use a torque wrench to apply 150 Newton-meters of pressure to each bolt. **Caution:** Overtightening will shear the threads. Step 5: Attach the cantilever support arm. Slide the support arm's mounting bracket over the top of the structural column, aligning the three pre-drilled holes with the securing apertures. Do not fully tighten the Phillips-head screws (P-3) yet, as further adjustments will be necessary in Step 7."
+        };
+
+
         const helpSuggestions = {
             'adventure': [
                 "Use high-stakes verbs (e.g., climb, traverse, forge) and action-oriented descriptions.",
@@ -143,6 +154,7 @@
                 "Establish a clear goal, a ticking clock, or a powerful obstacle the protagonist must overcome.",
                 "Describe equipment, skills, or natural resources vital for survival."
             ],
+            // ... (Help suggestions remain the same)
             'sci-fi': [
                 "Introduce futuristic terminology (e.g., droid, plasma, warp drive) and advanced technology.",
                 "Describe the setting with impossible architecture, zero-gravity, or alien landscapes.",
@@ -284,7 +296,9 @@
             };
 
             // Implementation of exponential backoff for API calls
-            const maxRetries = 5;
+            const maxRetries = 5; // Increased attempts to handle temporary 503 errors
+            let lastErrorMessage = 'Failed to connect to the API.';
+
             for (let attempt = 0; attempt < maxRetries; attempt++) {
                 let responseText = null;
                 try {
@@ -302,25 +316,25 @@
                         try {
                             // Attempt to parse non-200 response body for error message
                             result = JSON.parse(responseText);
-                            throw new Error(`API error: ${response.status} - ${result.error?.message || 'Unknown error'}`);
+                            lastErrorMessage = `API error: ${response.status} - ${result.error?.message || 'Unknown error'}`;
+                            throw new Error(lastErrorMessage);
                         } catch (e) {
-                            // If we can't parse the error body, throw a generic network error
-                            throw new Error(`Server returned error code ${response.status} with unparsable response.`);
+                            lastErrorMessage = `Server returned error code ${response.status} with unparsable response.`;
+                            throw new Error(lastErrorMessage);
                         }
                     }
 
                     // Attempt to parse the successful response text
                     if (!responseText) {
-                         throw new Error('Received an empty response body from the model.');
+                         lastErrorMessage = 'Received an empty response body from the model.';
+                         throw new Error(lastErrorMessage);
                     }
 
                     try {
                         result = JSON.parse(responseText);
                     } catch (e) {
-                        // Catch the SyntaxError: Unexpected end of input here
-                        console.error('JSON Parsing Failed:', e);
-                        console.error('Raw response text:', responseText);
-                        throw new Error('Could not parse model response (malformed JSON).');
+                        lastErrorMessage = 'Could not parse model response (malformed JSON).';
+                        throw new Error(lastErrorMessage);
                     }
                     
                     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -331,22 +345,29 @@
                         setLoading(false);
                         return; // Success, exit function
                     } else {
-                        // This handles cases where JSON is valid but content path is missing
-                        throw new Error('Model response was valid but contained no generated text.');
+                        lastErrorMessage = 'Model response was valid but contained no generated text.';
+                        throw new Error(lastErrorMessage);
                     }
 
                 } catch (error) {
+                    // Update error message for the console (last attempt only uses the last message)
+                    lastErrorMessage = error.message; 
                     console.error(`Attempt ${attempt + 1} failed:`, error);
-                    // Log raw text if available for debugging
-                    if (responseText) {
-                        console.error('Last received response text:', responseText);
-                    }
 
                     if (attempt === maxRetries - 1) {
-                        errorMessage.textContent = `Failed to generate text after ${maxRetries} attempts. Please try again. (${error.message})`;
-                        errorMessage.classList.remove('hidden');
+                        // Final failure: Implement fallback mechanism
+                        const fallbackText = fallbackParagraphs[genre];
+                        
+                        if (fallbackText) {
+                            console.log(`API failed after ${maxRetries} attempts. Displaying fallback text for ${genreName}.`);
+                            outputArea.textContent = `[Service Unavailable - Using Default Text] ${fallbackText}`;
+                            outputArea.classList.remove('italic');
+                        } else {
+                            errorMessage.textContent = `Final failure: Could not generate text and no fallback available. (${lastErrorMessage})`;
+                            errorMessage.classList.remove('hidden');
+                        }
                         setLoading(false);
-                        return; // Final failure
+                        return; // Final failure, exit function
                     }
                     // Wait before retrying (exponential backoff)
                     await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
@@ -366,7 +387,6 @@
 
         // Initialize on load
         window.onload = () => {
-            // Note: Firebase setup removed for external hosting
             populateDropdown();
         };
 
