@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ignite Education - Genre Writer</title>
+    <!-- PWA Manifest link -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for a polished look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f9;
+        }
+        .container-card {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 10px -5px rgba(0, 0, 0, 0.04);
+            transition: transform 0.3s ease;
+        }
+        .help-modal-overlay {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .help-modal-overlay.open {
+            visibility: visible;
+            opacity: 1;
+        }
+        .help-modal-content {
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .help-modal-overlay.open .help-modal-content {
+            transform: translateY(0);
+        }
+        .btn-primary {
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn-primary:hover {
+            background-color: #d13a00; /* Darker orange */
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+
+    <!-- Main Application Card -->
+    <div class="container-card rounded-xl">
+        <header class="mb-8 border-b pb-4">
+            <h1 class="text-4xl font-extrabold text-gray-900 text-center tracking-tight">
+                <span class="text-orange-600">Ignite</span> Education
+            </h1>
+            <p class="text-center text-gray-500 mt-2">Genre Continuation Tool</p>
+        </header>
+
+        <!-- Input Controls -->
+        <section class="space-y-6">
+            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                <label for="genre-select" class="block text-lg font-medium text-gray-700 sm:w-1/3">
+                    Choose a Genre:
+                </label>
+                <select id="genre-select" class="mt-1 block w-full sm:w-2/3 pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-lg rounded-lg shadow-sm cursor-pointer">
+                    <option value="" disabled selected>-- Select a writing style --</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                <button id="generate-button" disabled class="flex-1 btn-primary bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-lg">
+                    Generate Continuation Paragraph
+                </button>
+                <button id="help-button" disabled class="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-lg">
+                    Help!
+                </button>
+            </div>
+        </section>
+
+        <!-- Output Area -->
+        <section class="mt-10">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Generated Text</h2>
+            <div id="output-area" class="min-h-[120px] p-6 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 leading-relaxed text-base italic transition-all duration-300">
+                Select a genre and click 'Generate' to get a paragraph of 50-100 words to continue from.
+            </div>
+            <div id="loading-indicator" class="hidden text-center mt-4">
+                <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-orange-500 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+                    <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
+                </div>
+                <p class="text-gray-500 text-sm mt-2">Generating content...</p>
+            </div>
+            <div id="error-message" class="hidden text-red-600 font-medium text-sm mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <!-- Error messages will appear here -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Help Modal/Dialog -->
+    <div id="help-modal-overlay" class="help-modal-overlay fixed inset-0 bg-gray-900 bg-opacity-70 flex justify-center items-center z-50 p-4">
+        <div id="help-modal-content" class="help-modal-content bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+            <h3 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Genre Elements: <span id="help-genre-title" class="text-orange-600"></span></h3>
+            <ul id="help-suggestions-list" class="list-disc ml-5 space-y-2 text-gray-600 text-base">
+                <!-- Suggestions will be injected here -->
+            </ul>
+            <button onclick="document.getElementById('help-modal-overlay').classList.remove('open')" class="mt-6 w-full bg-orange-500 text-white font-semibold py-2 rounded-lg hover:bg-orange-600 transition duration-150">
+                Got It!
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Removed the Firebase/Auth setup code as it relies on Canvas environment variables 
+        // that will not exist when hosted externally.
+
+        // API Key placeholder remains empty. External hosting services may provide this
+        // but for this simple static deployment, it relies on the execution environment.
+        const apiKey = ""; 
+        
+        // --- Core Application Logic ---
+
+        const genreMap = {
+            'adventure': 'Adventure',
+            'sci-fi': 'Sci-Fi',
+            'horror': 'Horror',
+            'fairy/traditional tale': 'Fairy/Traditional Tale',
+            'comedy': 'Comedy',
+            'tragedy': 'Tragedy',
+            'report': 'Report',
+            'diary': 'Diary',
+            'instructions': 'Instructions'
+        };
+
+        const helpSuggestions = {
+            'adventure': [
+                "Use high-stakes verbs (e.g., climb, traverse, forge) and action-oriented descriptions.",
+                "Focus on the physical setting: harsh terrain, dangerous ruins, or an unknown location.",
+                "Establish a clear goal, a ticking clock, or a powerful obstacle the protagonist must overcome.",
+                "Describe equipment, skills, or natural resources vital for survival."
+            ],
+            'sci-fi': [
+                "Introduce futuristic terminology (e.g., droid, plasma, warp drive) and advanced technology.",
+                "Describe the setting with impossible architecture, zero-gravity, or alien landscapes.",
+                "Explore a philosophical theme like artificial intelligence, dystopia, or the nature of humanity.",
+                "Use precise, technical language when describing equipment or environments."
+            ],
+            'horror': [
+                "Use strong sensory details (damp, stench, shadows) to make the environment feel oppressive.",
+                "Build tension gradually; focus on what the protagonist *doesn't* see or know.",
+                "Focus on isolation, psychological fear, or a sense of mounting dread.",
+                "End the paragraph with a sudden, unsettling reveal or a sound that cuts the silence."
+            ],
+            'fairy/traditional tale': [
+                "Use a familiar opening (e.g., 'Once upon a time', 'In a land far away') or a clear moral lesson.",
+                "Introduce magical elements: wishes, curses, spells, or talking animals.",
+                "Use archaic or slightly formal language (e.g., hark, verily, bestow).",
+                "Establish clear, archetypal characters: the brave hero, the wicked villain, the wise old sage."
+            ],
+            'comedy': [
+                "Use exaggerated descriptions and over-the-top reactions to mundane events.",
+                "Employ wordplay, puns, or unexpected juxtapositions of ideas.",
+                "Set up a ridiculous situation, a serious misunderstanding, or physical slapstick.",
+                "Keep the tone light and the pace brisk."
+            ],
+            'tragedy': [
+                "Focus on emotional inner turmoil, regret, or a moment of inescapable realization.",
+                "Foreshadow inevitable doom or disaster using symbolic language (e.g., a cold wind, a failing light).",
+                "Use formal or dramatic language and focus on a single, fatal character flaw.",
+                "Highlight the gap between the character's desires and reality."
+            ],
+            'report': [
+                "Use objective, formal language and avoid personal opinions or emotional words.",
+                "Employ numbered facts, specific dates, or data points.",
+                "Maintain a professional, detached tone, and structure sentences clearly and concisely.",
+                "Focus on a single topic, providing factual information and analysis."
+            ],
+            'diary': [
+                "Use the first-person perspective ('I', 'my') and conversational, informal language.",
+                "Focus on personal feelings, reflections, and internal thoughts about recent events.",
+                "Include a date, a time, or a brief sign-off to maintain the format.",
+                "The 'voice' should sound spontaneous, as if written quickly after an event."
+            ],
+            'instructions': [
+                "Use clear, commanding verbs (Insert, Twist, Ensure, Connect) at the start of sentences.",
+                "Structure the content using ordered steps or phases.",
+                "Avoid descriptive language; focus only on the necessary actions and tools.",
+                "The goal should be a clear, practical outcome, like building a chair or preparing a meal."
+            ]
+        };
+
+        const selectElement = document.getElementById('genre-select');
+        const generateButton = document.getElementById('generate-button');
+        const helpButton = document.getElementById('help-button');
+        const outputArea = document.getElementById('output-area');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const errorMessage = document.getElementById('error-message');
+        const helpModalOverlay = document.getElementById('help-modal-overlay');
+        const helpGenreTitle = document.getElementById('help-genre-title');
+        const helpSuggestionsList = document.getElementById('help-suggestions-list');
+
+        /**
+         * Populates the genre dropdown menu.
+         */
+        function populateDropdown() {
+            Object.keys(genreMap).forEach(key => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = genreMap[key];
+                selectElement.appendChild(option);
+            });
+        }
+
+        /**
+         * Handles genre selection change to enable buttons.
+         */
+        selectElement.addEventListener('change', () => {
+            if (selectElement.value) {
+                generateButton.disabled = false;
+                helpButton.disabled = false;
+            } else {
+                generateButton.disabled = true;
+                helpButton.disabled = true;
+            }
+            outputArea.classList.add('italic');
+            outputArea.textContent = `Ready to generate a paragraph for the '${genreMap[selectElement.value]}' genre.`;
+        });
+
+        /**
+         * Displays the help modal with genre-specific suggestions.
+         */
+        helpButton.addEventListener('click', () => {
+            const genreKey = selectElement.value;
+            const genreName = genreMap[genreKey];
+
+            helpGenreTitle.textContent = genreName;
+            helpSuggestionsList.innerHTML = '';
+
+            const suggestions = helpSuggestions[genreKey] || ["No specific help available for this genre yet."];
+            suggestions.forEach(suggestion => {
+                const li = document.createElement('li');
+                li.textContent = suggestion;
+                helpSuggestionsList.appendChild(li);
+            });
+
+            helpModalOverlay.classList.add('open');
+        });
+
+        /**
+         * Shows or hides the loading state.
+         */
+        function setLoading(isLoading) {
+            generateButton.disabled = isLoading || !selectElement.value;
+            helpButton.disabled = isLoading || !selectElement.value;
+            loadingIndicator.classList.toggle('hidden', !isLoading);
+            errorMessage.classList.add('hidden');
+            if (isLoading) {
+                outputArea.textContent = 'Generating...';
+                outputArea.classList.remove('italic');
+            }
+        }
+
+        /**
+         * Fetches a generated paragraph from the Gemini API.
+         * @param {string} genre - The selected genre key.
+         */
+        async function fetchGeneratedParagraph(genre) {
+            setLoading(true);
+            const genreName = genreMap[genre];
+            const systemPrompt = "You are a creative writer focused on specific genre mechanics. Write in British English. Your tone must be appropriate for the requested genre.";
+            const userQuery = `Write a single, self-contained paragraph that is between 50 and 100 words long. The paragraph must be written in the style of a **${genreName}** and must end at a compelling or sensible point from which to continue the story or text. The text should be suitable for a high school or secondary school creative writing exercise.`;
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            // Implementation of exponential backoff for API calls
+            const maxRetries = 3;
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                let responseText = null;
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    // Read response as text first for robust error handling
+                    responseText = await response.text();
+                    let result = null;
+
+                    if (!response.ok) {
+                        try {
+                            // Attempt to parse non-200 response body for error message
+                            result = JSON.parse(responseText);
+                            throw new Error(`API error: ${response.status} - ${result.error?.message || 'Unknown error'}`);
+                        } catch (e) {
+                            // If we can't parse the error body, throw a generic network error
+                            throw new Error(`Server returned error code ${response.status} with unparsable response.`);
+                        }
+                    }
+
+                    // Attempt to parse the successful response text
+                    if (!responseText) {
+                         throw new Error('Received an empty response body from the model.');
+                    }
+
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (e) {
+                        // Catch the SyntaxError: Unexpected end of input here
+                        console.error('JSON Parsing Failed:', e);
+                        console.error('Raw response text:', responseText);
+                        throw new Error('Could not parse model response (malformed JSON).');
+                    }
+                    
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (text) {
+                        outputArea.textContent = text.trim();
+                        outputArea.classList.remove('italic');
+                        setLoading(false);
+                        return; // Success, exit function
+                    } else {
+                        // This handles cases where JSON is valid but content path is missing
+                        throw new Error('Model response was valid but contained no generated text.');
+                    }
+
+                } catch (error) {
+                    console.error(`Attempt ${attempt + 1} failed:`, error);
+                    // Log raw text if available for debugging
+                    if (responseText) {
+                        console.error('Last received response text:', responseText);
+                    }
+
+                    if (attempt === maxRetries - 1) {
+                        errorMessage.textContent = `Failed to generate text after ${maxRetries} attempts. Please try again. (${error.message})`;
+                        errorMessage.classList.remove('hidden');
+                        setLoading(false);
+                        return; // Final failure
+                    }
+                    // Wait before retrying (exponential backoff)
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+                }
+            }
+        }
+
+        /**
+         * Event listener for the generate button.
+         */
+        generateButton.addEventListener('click', () => {
+            const selectedGenre = selectElement.value;
+            if (selectedGenre) {
+                fetchGeneratedParagraph(selectedGenre);
+            }
+        });
+
+        // Initialize on load
+        window.onload = () => {
+            // Note: Firebase setup removed for external hosting
+            populateDropdown();
+        };
+
+    </script>
+</body>
+</html>
