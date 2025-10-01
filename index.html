@@ -286,7 +286,7 @@
             const systemPrompt = "You are a creative writer focused on specific genre mechanics. Write in British English. Your tone must be appropriate for the requested genre.";
             const userQuery = `Write a single, self-contained paragraph that is between 50 and 100 words long. The paragraph must be written in the style of a **${genreName}** and must end at a compelling or sensible point from which to continue the story or text. The text should be suitable for a high school or secondary school creative writing exercise.`;
 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const apiUrl = proxyUrl;
 
             const payload = {
                 contents: [{ parts: [{ text: userQuery }] }],
