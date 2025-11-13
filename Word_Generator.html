@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ignite Education: Word Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            position: relative;
+        }
+        /* Custom background using low-opacity emojis for a fun, geometric feel */
+        body::before {
+            content: "✨📦🌟🚀📚💡🖍️🎉🎈💯";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 8rem;
+            line-height: 1;
+            opacity: 0.05;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+            word-break: break-all;
+            white-space: pre-wrap;
+            /* Simple animation to make the background subtle and dynamic */
+            animation: move-emojis 20s linear infinite;
+        }
+
+        @keyframes move-emojis {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100%); }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen text-gray-800 p-4">
+
+    <main class="relative z-10 flex flex-col items-center justify-center p-8 md:p-12 lg:p-16 rounded-3xl shadow-xl max-w-6xl w-full bg-white bg-opacity-80 backdrop-blur-sm">
+
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-blue-600 tracking-tight drop-shadow-lg">Ignite Education</h1>
+        </header>
+
+        <!-- Word lists container -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+            
+            <!-- Containers -->
+            <div class="flex flex-col items-center text-center p-6 rounded-2xl bg-blue-50 hover:bg-blue-100 transition-colors duration-300 transform hover:scale-105 shadow-md">
+                <h2 class="text-2xl font-bold mb-4 text-blue-700">Containers</h2>
+                <ul id="list-containers" class="space-y-2 text-lg text-gray-700 font-medium"></ul>
+            </div>
+
+            <!-- Adjectives -->
+            <div class="flex flex-col items-center text-center p-6 rounded-2xl bg-purple-50 hover:bg-purple-100 transition-colors duration-300 transform hover:scale-105 shadow-md">
+                <h2 class="text-2xl font-bold mb-4 text-purple-700">Adjectives</h2>
+                <ul id="list-adjectives" class="space-y-2 text-lg text-gray-700 font-medium"></ul>
+            </div>
+
+            <!-- Abstract Nouns -->
+            <div class="flex flex-col items-center text-center p-6 rounded-2xl bg-indigo-50 hover:bg-indigo-100 transition-colors duration-300 transform hover:scale-105 shadow-md">
+                <h2 class="text-2xl font-bold mb-4 text-indigo-700">Abstract Nouns</h2>
+                <ul id="list-abstract" class="space-y-2 text-lg text-gray-700 font-medium"></ul>
+            </div>
+            
+            <!-- Verbs (Third-person singular simple present tense) -->
+            <div class="flex flex-col items-center text-center p-6 rounded-2xl bg-pink-50 hover:bg-pink-100 transition-colors duration-300 transform hover:scale-105 shadow-md">
+                <h2 class="text-2xl font-bold mb-4 text-pink-700">Verbs</h2>
+                <ul id="list-verbs" class="space-y-2 text-lg text-gray-700 font-medium"></ul>
+            </div>
+
+        </section>
+        
+        <!-- Action Button -->
+        <div class="mt-12">
+            <button id="generate-button" class="px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold text-lg rounded-full shadow-lg hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-300 transform hover:scale-105">
+                Generate New Words
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        // --- DATA ARRAYS ---
+        // I've included a good number of words for variety. You can add more to any of these lists.
+        const containerNouns = [
+            'library', 'zoo', 'garage', 'museum', 'hotel', 'theatre', 'beach', 'cave',
+            'rucksack', 'suitcase', 'sack', 'box', 'bucket', 'stadium', 'airport', 'bottle',
+            'closet', 'shed', 'warehouse', 'attic', 'vault', 'basin', 'cupboard', 'drawer',
+            'cask', 'chest', 'drum', 'canister', 'bin', 'carton', 'tray', 'satchel',
+            'envelope', 'wallet', 'pocket', 'bag', 'basket', 'globe', 'city', 'country',
+            'continent', 'ocean', 'forest', 'field', 'valley'
+        ];
+        
+        const abstractNouns = [
+            'love', 'freedom', 'justice', 'sadness', 'happiness', 'bravery', 'curiosity',
+            'honesty', 'friendship', 'loyalty', 'knowledge', 'wisdom', 'patience', 'beauty',
+            'truth', 'peace', 'war', 'success', 'failure', 'despair', 'trust', 'belief',
+            'memory', 'strength', 'weakness', 'passion', 'creativity', 'humour', 'grief'
+        ];
+
+        const adjectives = [
+            'happy', 'bright', 'quick', 'slow', 'brave', 'calm', 'quiet', 'loud', 'kind',
+            'gentle', 'rough', 'smooth', 'witty', 'tall', 'short', 'strong', 'weak',
+            'huge', 'tiny', 'beautiful', 'ugly', 'clean', 'dirty', 'rich', 'poor', 'spicy',
+            'sweet', 'sour', 'bitter', 'salty', 'fresh', 'stale', 'old', 'new', 'young',
+            'eager', 'nervous', 'excited', 'bored', 'calm', 'daring', 'graceful', 'swift'
+        ];
+
+        const verbs = [
+            'runs', 'jumps', 'sings', 'eats', 'sleeps', 'drinks', 'walks', 'talks', 'reads', 'writes',
+            'flies', 'swims', 'drives', 'builds', 'creates', 'plays', 'teaches', 'learns', 'sees', 'hears',
+            'smells', 'tastes', 'feels', 'thinks', 'dreams', 'laughs', 'cries', 'smiles', 'frowns',
+            'lives', 'dies', 'grows', 'shrinks', 'stands', 'sits', 'lies'
+        ];
+
+        // --- DOM ELEMENTS & SETUP ---
+        const lists = {
+            containers: document.getElementById('list-containers'),
+            adjectives: document.getElementById('list-adjectives'),
+            abstract: document.getElementById('list-abstract'),
+            verbs: document.getElementById('list-verbs')
+        };
+        const generateButton = document.getElementById('generate-button');
+
+        // --- FUNCTIONS ---
+        // Function to get a random list of a certain number of words
+        const getRandomWords = (array, count) => {
+            const shuffled = [...array].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        };
+
+        // Function to update the UI with new words
+        const updateUI = () => {
+            const wordSets = {
+                containers: getRandomWords(containerNouns, 5),
+                adjectives: getRandomWords(adjectives, 5),
+                abstract: getRandomWords(abstractNouns, 5),
+                verbs: getRandomWords(verbs, 5)
+            };
+
+            for (const listName in lists) {
+                lists[listName].innerHTML = ''; // Clear existing list items
+                wordSets[listName].forEach(word => {
+                    const li = document.createElement('li');
+                    li.textContent = word;
+                    lists[listName].appendChild(li);
+                });
+            }
+        };
+
+        // --- EVENT LISTENERS ---
+        // Generate new words when the button is clicked
+        generateButton.addEventListener('click', updateUI);
+
+        // Generate initial words on page load
+        window.addEventListener('DOMContentLoaded', updateUI);
+    </script>
+
+</body>
+</html>
