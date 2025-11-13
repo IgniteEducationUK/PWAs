@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentence Sparker | Ignite Education</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind theme for better aesthetics -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ignite-blue': '#1e3a8a', // Dark Blue for branding
+                        'ignite-yellow': '#f59e0b', // Bright yellow accent
+                        'ignite-light': '#eff6ff',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    keyframes: {
+                        sparkle: {
+                            '0%, 100%': { transform: 'scale(1)', opacity: 1, boxShadow: '0 0 0px #f59e0b' },
+                            '50%': { transform: 'scale(1.05)', opacity: 0.9, boxShadow: '0 0 15px #f59e0b, 0 0 30px #f59e0b' },
+                        }
+                    },
+                    animation: {
+                        sparkle: 'sparkle 0.5s ease-in-out',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for PWA look and feel */
+        body {
+            background-color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Start elements from the top */
+        }
+        .icon-grid {
+            transition: all 0.5s ease-in-out;
+            min-height: 150px; /* Ensure space even when empty */
+        }
+        .icon-box {
+            /* Removed conflicting flex properties and aspect ratio to accommodate text label */
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: default;
+        }
+        /* Style for the sparkly animation on the grid container */
+        .sparkle-container {
+             animation: sparkle 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="font-sans p-4 md:p-8">
+
+    <div id="app" class="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 md:p-8 border-t-8 border-ignite-blue">
+
+        <!-- Header -->
+        <h1 class="text-3xl font-extrabold text-ignite-blue mb-2">
+            Sentence Sparker
+        </h1>
+        <p class="text-gray-600 mb-6">
+            From Ignite Education – Select icons to generate a creative prompt!
+        </p>
+
+        <!-- Controls -->
+        <div class="space-y-4 mb-8">
+            <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <!-- Dropdown -->
+                <div class="w-full sm:w-1/3">
+                    <label for="iconCount" class="block text-sm font-medium text-gray-700 mb-1">
+                        Select Prompts
+                    </label>
+                    <select id="iconCount" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-ignite-yellow focus:border-ignite-yellow text-lg">
+                        <option value="3">3 Icons (1x3)</option>
+                        <option value="6">6 Icons (2x3)</option>
+                        <option value="9" selected>9 Icons (3x3)</option>
+                    </select>
+                </div>
+
+                <!-- Spark Button -->
+                <button id="sparkButton" onclick="sparkCreativity()" class="w-full sm:w-2/3 h-12 bg-ignite-blue text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-blue-800 transition duration-150 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-ignite-yellow active:scale-[0.98]">
+                    Spark my creativity
+                </button>
+            </div>
+
+            <!-- Challenge Button -->
+            <button id="challengeButton" onclick="showChallenge()" class="w-full h-10 bg-ignite-yellow text-ignite-blue font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-yellow-600 transition duration-150 ease-in-out focus:outline-none focus:ring-4 focus:ring-ignite-blue active:scale-[0.99]">
+                CHALLENGE: Get a Literary Device
+            </button>
+        </div>
+
+        <!-- Challenge Display -->
+        <div id="challengeOutput" class="min-h-[50px] mb-8 p-4 bg-ignite-light border border-ignite-blue/30 rounded-lg text-center text-lg font-semibold text-gray-800 hidden">
+            <!-- Literary device challenge will appear here -->
+        </div>
+
+        <!-- Icon Grid Output -->
+        <div id="iconGrid" class="icon-grid grid gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <p class="text-center text-gray-400 p-8">Tap 'Spark my creativity' to begin!</p>
+        </div>
+
+    </div>
+
+    <script type="text/javascript">
+        // Story Dice Icons (Inline SVG for simple, scalable, and ideographically clear graphics)
+        const storyDiceIcons = [
+            // [Key, SVG_Path_Data, Description]
+            ['Star', `<path fill="currentColor" d="M12 2l3.09 6.26l6.91.51l-5 4.87l1.18 6.88L12 17.77l-6.18 3.25l1.18-6.88l-5-4.87l6.91-.51z"/>`], // Object/Wish
+            ['Person', `<path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3s-3-1.34-3-3s1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22c.03-1.99 4-3.88 6-3.88s5.97 1.89 6 3.88c-1.29 1.94-3.5 3.22-6 3.22z"/>`], // Character
+            ['House', `<path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3L2 12h3v8z"/>`], // Setting/Home
+            ['Heart', `<path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5C2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.1C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z"/>`], // Emotion
+            ['Book', `<path fill="currentColor" d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-2 16H8V4h8z"/>`], // Object/Knowledge
+            ['Clock', `<path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2zm1 14h-2V7h2z"/>`], // Time/Object
+            ['Cloud', `<path fill="currentColor" d="M19 12h-1c0-2.21-1.79-4-4-4c-2.45 0-4.46 1.76-4.95 4.02C5.06 12.06 3 14.17 3 16.5C3 19.01 5.01 21 7.5 21h11c2.48 0 4.5-2.02 4.5-4.5S21.48 12 19 12z"/>`], // Weather/Setting
+            ['Footprint', `<path fill="currentColor" d="M13 3c-1.1 0-2.1.6-2.6 1.5c-1.1 1.8-.7 4.2 1.1 5.3c1.7 1 3.9 1 5.6-.1l.1-.1c.3-.2.5-.5.5-.9c0-.4-.2-.7-.5-.9c-1.7-1-3.9-1-5.6-.1c-1.1.7-1.8 1.9-1.8 3.2c0 2.2 1.8 4 4 4h3v2h-4c-3.3 0-6-2.7-6-6c0-1.8.8-3.5 2-4.6V5c0-1.1.9-2 2-2z"/>`], // Clue/Trail
+            ['Boat', `<path fill="currentColor" d="M20 18c-1.4 0-2.8-.7-4.1-2c-.5-1.2-1.3-2.3-2.5-3.3c-1.2-1-2.5-1.5-3.9-1.5c-2.6 0-4.9 1.1-6.5 3c-1.3 1.6-2.1 3.6-2.1 5.7V22h2v-2c0-1.8 1.2-3.3 3-3.8V9.5C9.5 9 10.5 8 12 8s2.5 1 3.5 1.5V13c1.8-.5 3-2 3-3.8V7h2v11z"/>`], // Journey/Vehicle
+            ['Moon', `<path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10C22 6.48 17.52 2 12 2zm0 18V4c4.41 0 8 3.59 8 8s-3.59 8-8 8z"/>`], // Night/Setting
+            ['Mountain', `<path fill="currentColor" d="M12 2l-5.5 9h11L12 2zM3 14l1.5 2.5L7 14l1.5 2.5L10 14l1.5 2.5L13 14l1.5 2.5L16 14l1.5 2.5L19 14v8H3v-8z"/>`], // Setting/Challenge
+            ['Cat', `<path fill="currentColor" d="M20 18v2H4v-2c0-1.74 1.34-3.14 3-3.23V11h-2V9h2V7h2v2h4V7h2v2h2v2h-2v3.77c1.66.09 3 1.5 3 3.23zM9 11v2h6v-2H9z"/>`] // Character/Animal
+        ];
+
+        // KS2 Literary Devices/Techniques (UK English Curriculum)
+        const literaryDevices = [
+            "Simile (e.g., 'as cold as ice')",
+            "Metaphor (e.g., 'the snow was a white blanket')",
+            "Personification (e.g., 'the wind whispered secrets')",
+            "Alliteration (e.g., 'slippery, sliding snakes')",
+            "Onomatopoeia (e.g., 'crash', 'sizzle', 'zoom')",
+            "Hyperbole (exaggeration for effect)",
+            "A powerful Adverbial Phrase (e.g., 'Without warning,')",
+            "Fronted Adverbial (followed by a comma)",
+            "Pathetic Fallacy (where the weather reflects the mood)",
+            "A rhetorical question",
+            "A semi-colon to join related main clauses"
+        ];
+
+        const iconGrid = document.getElementById('iconGrid');
+        const challengeOutput = document.getElementById('challengeOutput');
+        const iconCountSelect = document.getElementById('iconCount');
+        const sparkButton = document.getElementById('sparkButton');
+
+        /**
+         * Utility function to get a random element from an array.
+         * @param {Array<T>} arr The array to select from.
+         * @returns {T} A random element.
+         * @template T
+         */
+        const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+        /**
+         * Shuffles an array in place (Fisher-Yates algorithm).
+         * @param {Array<T>} array The array to shuffle.
+         * @returns {Array<T>} The shuffled array.
+         * @template T
+         */
+        const shuffleArray = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /**
+         * Creates an SVG icon element.
+         * @param {string} dPath The SVG path data.
+         * @param {string} title The title/description for accessibility.
+         * @returns {string} The complete SVG string.
+         */
+        const createSvg = (dPath, title) => `
+            <svg class="w-12 h-12 md:w-16 md:h-16 text-ignite-blue/80 group-hover:text-ignite-blue transition-colors duration-200"
+                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-label="${title}">
+                ${dPath}
+            </svg>
+        `;
+
+        /**
+         * Implements the 'Spark my creativity' functionality.
+         * Generates a random set of story dice icons and displays them in a grid.
+         */
+        function sparkCreativity() {
+            // 1. Get the desired number of icons
+            const count = parseInt(iconCountSelect.value, 10);
+            const numCols = 3;
+            const numRows = count / numCols;
+
+            // 2. Generate the random selection
+            // Shuffle all icons and take the first 'count' elements
+            const shuffledIcons = shuffleArray([...storyDiceIcons]);
+            const selectedIcons = shuffledIcons.slice(0, count);
+
+            // 3. Render the icons and grid
+            let htmlContent = '';
+            selectedIcons.forEach(icon => {
+                const [title, dPath] = icon;
+                const svgString = createSvg(dPath, title);
+                
+                // The icon-box now uses flex-col to stack the image and the label
+                htmlContent += `
+                    <div class="icon-box flex flex-col items-center justify-between bg-white border border-gray-100 rounded-xl shadow-lg hover:shadow-xl group overflow-hidden">
+                        
+                        <!-- SVG Icon Area: centered in the main space -->
+                        <div class="flex items-center justify-center w-full p-4">
+                            ${svgString}
+                        </div>
+                        
+                        <!-- Text Label Area: small, bold, and at the bottom -->
+                        <div class="w-full text-center text-xs md:text-sm font-bold text-ignite-blue/90 uppercase bg-ignite-light/50 py-1.5">
+                            ${title}
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Set grid styling based on selection
+            iconGrid.className = `icon-grid grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200`;
+            if (count === 3) {
+                 // 1x3: use grid-cols-3 and set max width to keep them close
+                iconGrid.style.maxWidth = '300px';
+                iconGrid.classList.add('mx-auto');
+            } else if (count === 6) {
+                // 2x3
+                iconGrid.style.maxWidth = '400px';
+                iconGrid.classList.add('mx-auto');
+            } else if (count === 9) {
+                // 3x3
+                iconGrid.style.maxWidth = 'unset'; // Use full width
+                iconGrid.classList.remove('mx-auto');
+            }
+
+            iconGrid.innerHTML = htmlContent;
+
+            // 4. Sparkly Animation Effect
+            // Add a temporary class to trigger the sparkle animation on the grid
+            iconGrid.classList.add('sparkle-container');
+            // Add a temporary glow to the button
+            sparkButton.classList.add('animate-sparkle');
+
+            // Remove the classes after the animation duration (0.5s)
+            setTimeout(() => {
+                iconGrid.classList.remove('sparkle-container');
+                sparkButton.classList.remove('animate-sparkle');
+            }, 500);
+
+            // Hide the challenge output if it was visible
+            challengeOutput.classList.add('hidden');
+        }
+
+        /**
+         * Implements the 'CHALLENGE' functionality.
+         * Displays a random KS2 literary device.
+         */
+        function showChallenge() {
+            // 1. Select a random literary device
+            const challenge = getRandomElement(literaryDevices);
+
+            // 2. Display the challenge
+            challengeOutput.innerHTML = `<span class="text-ignite-blue">Challenge:</span> Use **${challenge}** in your sentence!`;
+            challengeOutput.classList.remove('hidden');
+
+             // Add a subtle animation to the challenge box
+            challengeOutput.classList.add('animate-sparkle');
+             setTimeout(() => {
+                challengeOutput.classList.remove('animate-sparkle');
+            }, 500);
+        }
+
+        // Run sparkCreativity on load with the default 9 icons
+        window.onload = sparkCreativity;
+
+    </script>
+</body>
+</html>
