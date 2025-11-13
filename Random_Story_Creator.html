@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Prompt Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0e7ff;
+        }
+        .shelf {
+            background-color: #8B4513; /* A nice wood tone */
+            background-image: linear-gradient(135deg, #A0522D 25%, transparent 25%, transparent 50%, #A0522D 50%, #A0522D 75%, transparent 75%, transparent);
+            background-size: 8px 8px;
+        }
+        .cubby {
+            background-color: #D2B48C; /* A lighter wood tone for inside */
+        }
+        .object-emoji {
+            font-size: 3rem;
+        }
+        .object-name {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #4b5563;
+        }
+        .prompt-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        @media (min-width: 768px) {
+            .object-emoji {
+                font-size: 5rem;
+            }
+            .object-name {
+                font-size: 1.25rem;
+            }
+            .prompt-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 md:p-8 text-gray-800">
+
+    <main class="w-full max-w-4xl flex flex-col items-center">
+        <!-- Company Name -->
+        <h1 class="text-4xl md:text-5xl font-extrabold text-center text-red-700 mb-8">Ignite Education</h1>
+
+        <!-- The button to trigger the animation -->
+        <button id="generateBtn"
+                class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 mb-16">
+            Press Me
+        </button>
+
+        <!-- The wooden shelf with three cubbies -->
+        <div class="shelf p-4 rounded-xl shadow-xl w-full">
+            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 items-center justify-around w-full">
+                <div id="cubby1" class="cubby flex flex-col items-center justify-center w-full h-48 rounded-xl shadow-inner p-4">
+                    <span id="object-emoji-1" class="object-emoji"></span>
+                    <span id="object-name-1" class="object-name mt-2"></span>
+                </div>
+                <div id="cubby2" class="cubby flex flex-col items-center justify-center w-full h-48 rounded-xl shadow-inner p-4">
+                    <span id="object-emoji-2" class="object-emoji"></span>
+                    <span id="object-name-2" class="object-name mt-2"></span>
+                </div>
+                <div id="cubby3" class="cubby flex flex-col items-center justify-center w-full h-48 rounded-xl shadow-inner p-4">
+                    <span id="object-emoji-3" class="object-emoji"></span>
+                    <span id="object-name-3" class="object-name mt-2"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- The creative writing prompt title -->
+        <h2 id="promptTitle" class="prompt-title text-center mt-12 px-4 italic text-gray-700"></h2>
+    </main>
+
+    <script>
+        // PWA functionality
+        const manifest = {
+            "name": "Creative Prompt Generator",
+            "short_name": "PromptGen",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#e0e7ff",
+            "theme_color": "#8B4513",
+            "icons": [
+                {
+                    "src": "https://placehold.co/192x192/8B4513/FFFFFF?text=PG",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "https://placehold.co/512x512/8B4513/FFFFFF?text=PG",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        };
+
+        const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        const manifestUrl = URL.createObjectURL(manifestBlob);
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = manifestUrl;
+        document.head.appendChild(manifestLink);
+
+        const serviceWorkerScript = `
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open('pwa-cache-v1').then((cache) => {
+            return cache.addAll(['./', 'index.html']);
+        })
+    );
+});
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request).then((response) => {
+            return response || fetch(event.request);
+        })
+    );
+});
+        `;
+
+        const swBlob = new Blob([serviceWorkerScript], { type: 'text/javascript' });
+        const swUrl = URL.createObjectURL(swBlob);
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register(swUrl)
+                    .then(reg => console.log('Service Worker registered!', reg))
+                    .catch(err => console.log('Service Worker registration failed: ', err));
+            });
+        }
+
+        // Main app logic
+        const generateBtn = document.getElementById('generateBtn');
+        const objectEmoji1 = document.getElementById('object-emoji-1');
+        const objectEmoji2 = document.getElementById('object-emoji-2');
+        const objectEmoji3 = document.getElementById('object-emoji-3');
+        const objectName1 = document.getElementById('object-name-1');
+        const objectName2 = document.getElementById('object-name-2');
+        const objectName3 = document.getElementById('object-name-3');
+        const promptTitleH2 = document.getElementById('promptTitle');
+
+        const objects = {
+            '📖': 'book',
+            '🧭': 'compass',
+            '🕰️': 'clock',
+            '🔮': 'crystal ball',
+            '🗺️': 'map',
+            '🔑': 'key',
+            '✒️': 'fountain pen',
+            '🕯️': 'candle',
+            '🎻': 'violin',
+            '💎': 'diamond',
+            '📜': 'scroll',
+            '📷': 'camera',
+            '✉️': 'envelope',
+            '🔭': 'telescope',
+            '🧪': 'test tube',
+            '🧬': 'DNA',
+            '⚙️': 'gear',
+            '⚖️': 'scales',
+            '🗝️': 'old key',
+            '🏺': 'amphora',
+            '🖼️': 'picture frame',
+            '👑': 'crown',
+            '🗿': 'moai',
+            '🛸': 'flying saucer',
+            '🛰️': 'satellite',
+            '🤖': 'robot',
+            '👾': 'alien monster',
+            '👻': 'ghost',
+            '🦄': 'unicorn',
+            '🐲': 'dragon'
+        };
+
+        const prompts = [
+            'The door was unlocked, but no one had been seen for years.',
+            'A message in a bottle from a world not our own.',
+            'The clock ticked backwards for the first time in history.',
+            'The garden bloomed in impossible colours under the moonlight.',
+            'A forgotten toy whispers the secret of its past life.',
+            'Everything changed when the sky turned an iridescent green.',
+            'They say the mountains are made of frozen sound.',
+            'The last song on a lost radio frequency.',
+            'A map with a destination that doesn’t exist.',
+            'The librarian who could read the stories of objects.'
+        ];
+
+        function getRandomUniqueKeys(obj, num) {
+            const keys = Object.keys(obj);
+            const shuffled = [...keys].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, num);
+        }
+
+        generateBtn.addEventListener('click', () => {
+            // Confetti animation
+            confetti({
+                particleCount: 150,
+                spread: 120,
+                origin: { y: 0.6 }
+            });
+
+            // Get random unique objects
+            const randomObjectKeys = getRandomUniqueKeys(objects, 3);
+            
+            objectEmoji1.textContent = randomObjectKeys[0];
+            objectName1.textContent = objects[randomObjectKeys[0]];
+            
+            objectEmoji2.textContent = randomObjectKeys[1];
+            objectName2.textContent = objects[randomObjectKeys[1]];
+            
+            objectEmoji3.textContent = randomObjectKeys[2];
+            objectName3.textContent = objects[randomObjectKeys[2]];
+
+            // Get random prompt
+            const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+            promptTitleH2.textContent = randomPrompt;
+        });
+    </script>
+</body>
+</html>
