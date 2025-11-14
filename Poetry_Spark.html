@@ -8,12 +8,11 @@
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Set theme colour for PWA -->
+    <!-- Set theme colour -->
     <meta name="theme-color" content="#4f46e5">
     
-    <!-- Embedded Manifest for PWA functionality -->
-    <link rel="manifest" href="data:application/json;base64,ewogICAgIm5hbWUiOiAiSWduaXRlIEltYWdlIFNwYXJrIiwKICAgICJzaG9ydF9uYW1lIjogIkltYWdlIFNwYXJrIiwKICAgICJzdGFydF91cmwiOiAiLiIsCiAgICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAgICJkZXNjcmlwdGlvbiI6ICJBIGNyZWF0aXZlIHByb21wdCBnZW5lcmF0b3IgYnkgSWduaXRlIEVkdWNhdGlvbi4iLAogICAgImJhY2tncm91bmRfY29sb3IiOiAiI2Y5ZmJmYyIsCiAgICAidGhlbWVfY29sb3IiOiAiIzRmNDZlNSIsCiAgICAiaWNvbnMiOiBbCiAgICAgIHsKICAgICAgICAic3JjIjogImh0dHBzOi8vcGxhY2Vob2xkLmNvLzE5MngxOTIvNGY0NmU1L2ZmZmZmZj90ZXh0PUlnbml0ZSZmb250PXNhbnMiLAogICAgICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAic3JjIjogImh0dHBzOi8vcGxhY2Vob2xkLmNvLzUxMng1MTIvNGY0NmU1L2ZmZmZmZj90ZXh0PUlnbml0ZSZmb250PXNhbnMiLAogICAgICAgICJzaXplcyI6ICI1MTJ4NTEyIiwKICAgICAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgICAgIH0KICAgIF0KICB9">
-    
+    <!-- NOTE: The failing data: manifest link has been removed -->
+
     <!-- Apple touch icon for iOS -->
     <link rel="apple-touch-icon" href="https://placehold.co/180x180/4f46e5/ffffff?text=Ignite&font=sans">
 
@@ -95,21 +94,13 @@
 
         // --- Core Functions ---
 
-        /**
-         * Gets 5 random words from the main list.
-         * @returns {string[]} An array of 5 unique random words.
-         */
         function getRandomWords() {
             const shuffled = [...wordList].sort(() => 0.5 - Math.random());
             return shuffled.slice(0, 5);
         }
 
-        /**
-         * Displays the 5 random words as pills.
-         * @param {string[]} words - An array of 5 words.
-         */
         function displayWords(words) {
-            wordsContainer.innerHTML = ''; // Clear previous words
+            wordsContainer.innerHTML = '';
             words.forEach(word => {
                 const pill = document.createElement('span');
                 pill.className = 'bg-indigo-100 text-indigo-800 text-sm font-semibold px-3 py-1 rounded-full';
@@ -118,9 +109,6 @@
             });
         }
 
-        /**
-         * Shows a loading state in the UI.
-         */
         function showLoading() {
             generateButton.disabled = true;
             generateButton.textContent = 'Generating...';
@@ -128,24 +116,13 @@
             imageContainer.classList.add('bg-gray-200');
         }
 
-        /**
-         * Hides the loading state and re-enables the button.
-         */
         function hideLoading() {
             generateButton.disabled = false;
             generateButton.textContent = 'Spark New Image';
         }
 
-        /**
-         * Fetches an image from the Gemini API based on a prompt.
-         * @param {string} prompt - The prompt for image generation.
-         * @returns {Promise<string>} A promise that resolves with a base64 image data URL.
-         */
         async function generateImage(prompt) {
             
-            // --- THIS IS THE CHANGE ---
-            // The apiKey line is gone.
-            // Paste your new Service URL from Cloud Run below.
             const apiUrl = "https://poetry-spark-958819967973.europe-west1.run.app"; 
 
             const payload = {
@@ -176,20 +153,14 @@
                         } else {
                             throw new Error('Invalid image data in response.');
                         }
-                    } else if (response.status === 429) {
-                        // Implement exponential backoff for rate limiting
-                        await new Promise(res => setTimeout(res, delay));
-                        delay *= 2; // Increase delay
                     } else {
-                        // Handle other errors
-                        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                        // Throw an error with the status
+                        throw new Error(`API Error: ${response.status}`);
                     }
                 } catch (error) {
                     if (i === retries - 1) {
-                        // If this was the last retry, re-throw the error
                         throw error;
                     }
-                    // Wait before retrying for network errors
                     await new Promise(res => setTimeout(res, delay));
                     delay *= 2;
                 }
@@ -198,28 +169,17 @@
             throw new Error('Failed to generate image after retries.');
         }
 
-        /**
-         * Main handler for the generate button click.
-         */
         async function handleGenerateClick() {
             showLoading();
-            wordsContainer.innerHTML = ''; // Clear words on new generation
+            wordsContainer.innerHTML = '';
 
             try {
-                // 1. Get random words
                 const words = getRandomWords();
-                
-                // 2. Display them
                 displayWords(words);
-                
-                // 3. Create a prompt
                 const prompt = `A dream-like, digital art illustration of: ${words.join(', ')}.`;
-                
-                // 4. Generate the image
                 const imageUrl = await generateImage(prompt);
                 
-                // 5. Display the image
-                imageContainer.innerHTML = ''; // Clear spinner
+                imageContainer.innerHTML = '';
                 imageContainer.classList.remove('bg-gray-200');
                 const img = document.createElement('img');
                 img.src = imageUrl;
@@ -229,7 +189,7 @@
 
             } catch (error) {
                 console.error('Error generating image:', error);
-                imageContainer.innerHTML = '<span class="text-red-500 p-4 text-center">Sorry, an error occurred. Please try again.</span>';
+                imageContainer.innerHTML = `<span class="text-red-500 p-4 text-center">Sorry, an error occurred (${error.message}). Please try again.</span>`;
                 imageContainer.classList.add('bg-gray-200');
             } finally {
                 hideLoading();
@@ -240,18 +200,7 @@
         generateButton.addEventListener('click', handleGenerateClick);
 
         // --- PWA Service Worker Registration ---
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register(
-                'data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdGZXRjaCcsIGZ1bmN0aW9uKGUpIHt9KTs='
-            ).then(
-                (registration) => {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                },
-                (error) => {
-                    console.error('Service Worker registration failed:', error);
-                }
-            );
-        }
+        // NOTE: The failing data: service worker script has been removed.
 
     </script>
 </body>
