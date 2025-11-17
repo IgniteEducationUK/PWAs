@@ -121,7 +121,10 @@
          */
         async function generateImage(prompt) {
             
-            const apiUrl = "https://poetry-spark-958819967973.europe-west1.run.app";
+            // --- THIS IS THE FINAL V18 CHANGE ---
+            // This URL now points to your new, correct 'poetry-spark-v2' server.
+            const apiUrl = "https://poetry-spark-v2-958819967973.europe-west1.run.app";
+            // --- END OF FINAL V18 CHANGE ---
             
             const payload = {
                 instances: { 
@@ -138,17 +141,15 @@
 
             for (let i = 0; i < retries; i++) {
                 try {
-                    // --- THIS IS THE V17 CHANGE (FROM THE SUGGESTION) ---
                     response = await fetch(apiUrl, {
                         method: 'POST', 
                         headers: { 
                             'Content-Type': 'application/json',
-                            'Accept': 'application/json' // Added Accept header
+                            'Accept': 'application/json'
                         },
                         body: JSON.stringify(payload),
-                        mode: 'cors' // Added mode: 'cors'
+                        mode: 'cors'
                     });
-                    // --- END OF V17 CHANGE ---
 
                     if (response.ok) {
                         const result = await response.json();
@@ -158,11 +159,8 @@
                             throw new Error('Invalid image data in response.');
                         }
                     } else {
-                        // --- THIS IS THE V17 CHANGE (FROM THE SUGGESTION) ---
-                        // This will log the *actual error* from the server.
                         const text = await response.text();
                         throw new Error(`API Error: ${response.status} ${response.statusText} - ${text}`);
-                        // --- END OF V1Y CHANGE ---
                     }
                 } catch (error) {
                     if (i === retries - 1) { throw error; }
@@ -194,7 +192,6 @@
 
             } catch (error) {
                 console.error('Error generating image:', error);
-                // The new error from fetch will be displayed here
                 imageContainer.innerHTML = `<span class="text-red-500 p-4 text-center">Sorry, an error occurred (${error.message}). Please try again.</span>`;
                 imageContainer.classList.add('bg-gray-200');
             } finally {
