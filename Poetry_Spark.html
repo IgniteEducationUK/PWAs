@@ -4,77 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ignite Image Spark</title>
-    
-    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Set theme colour -->
     <meta name="theme-color" content="#4f46e5">
-    
-    <!-- Apple touch icon for iOS -->
     <link rel="apple-touch-icon" href="https://placehold.co/180x180/4f46e5/ffffff?text=Ignite&font=sans">
-
-    <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        
-        /* Simple loading spinner */
+        body { font-family: 'Inter', sans-serif; }
         .spinner {
-            width: 48px;
-            height: 48px;
-            border: 5px solid #FFF;
-            border-bottom-color: #4f46e5;
-            border-radius: 50%;
-            display: inline-block;
-            box-sizing: border-box;
+            width: 48px; height: 48px; border: 5px solid #FFF;
+            border-bottom-color: #4f46e5; border-radius: 50%;
+            display: inline-block; box-sizing: border-box;
             animation: rotation 1s linear infinite;
         }
-
-        @keyframes rotation {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-
     <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 w-full max-w-lg mx-auto">
-        
-        <!-- Header -->
-        <h1 class="text-center text-3xl font-bold text-indigo-700 mb-6">
-            Ignite Education
-        </h1>
-
-        <!-- Image Container -->
+        <h1 class="text-center text-3xl font-bold text-indigo-700 mb-6">Ignite Education</h1>
         <div id="image-container" class="w-full h-72 sm:h-80 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 overflow-hidden mb-6 transition-all duration-300">
             Click the button to spark an idea!
         </div>
-
-        <!-- Words Container -->
-        <div id="words-container" class="flex flex-wrap justify-center items-center gap-2 min-h-[3.5rem] mb-6">
-            <!-- Word pills will be injected here -->
-        </div>
-
-        <!-- Generate Button -->
+        <div id="words-container" class="flex flex-wrap justify-center items-center gap-2 min-h-[3.5rem] mb-6"></div>
         <button id="generate-button" class="w-full bg-indigo-600 text-white text-lg font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed">
             Spark Image
         </button>
-        
     </div>
-
     <script>
-        // --- DOM Elements ---
         const generateButton = document.getElementById('generate-button');
         const imageContainer = document.getElementById('image-container');
         const wordsContainer = document.getElementById('words-container');
-
-        // --- Word Lists ---
         const wordList = [
             'castle', 'forest', 'dragon', 'river', 'mountain', 'ocean', 'city', 'robot', 'planet', 'wizard',
             'key', 'book', 'ship', 'train', 'bridge', 'tower', 'moon', 'star', 'comet', 'garden',
@@ -86,7 +47,6 @@
             'glows', 'fades', 'watches', 'listens', 'speaks', 'sings', 'dances', 'builds', 'explores', 'dreams'
         ];
 
-        // --- Core Functions ---
         function getRandomWords() {
             const shuffled = [...wordList].sort(() => 0.5 - Math.random());
             return shuffled.slice(0, 5);
@@ -114,25 +74,15 @@
             generateButton.textContent = 'Spark New Image';
         }
 
-        /**
-         * Fetches an image from the Gemini API based on a prompt.
-         * @param {string} prompt - The prompt for image generation.
-         * @returns {Promise<string>} A promise that resolves with a base64 image data URL.
-         */
         async function generateImage(prompt) {
-            
-            // --- THIS IS THE FINAL V18 CHANGE ---
-            // This URL now points to your new, correct 'poetry-spark-v2' server.
-            const apiUrl = "https://poetry-spark-us-958819967973.us-central1.run.app";
-            // --- END OF FINAL V18 CHANGE ---
+            // --- IMPORTANT: UPDATE THIS URL IF YOU CHANGED REGION ---
+            // If you deployed to us-central1, this needs to be that URL.
+            // I'm defaulting to the one you successfully deployed to most recently (poetry-spark-v2).
+            const apiUrl = "https://poetry-spark-v2-958819967973.europe-west1.run.app"; 
             
             const payload = {
-                instances: { 
-                    prompt: prompt 
-                },
-                parameters: { 
-                    "sampleCount": 1
-                }
+                instances: { prompt: prompt },
+                parameters: { "sampleCount": 1 }
             };
             
             let response;
@@ -168,14 +118,12 @@
                     delay *= 2;
                 }
             }
-            
             throw new Error('Failed to generate image after retries.');
         }
 
         async function handleGenerateClick() {
             showLoading();
             wordsContainer.innerHTML = ''; 
-
             try {
                 const words = getRandomWords();
                 displayWords(words);
@@ -198,10 +146,7 @@
                 hideLoading();
             }
         }
-
-        // --- Event Listener ---
         generateButton.addEventListener('click', handleGenerateClick);
-
     </script>
 </body>
 </html>
